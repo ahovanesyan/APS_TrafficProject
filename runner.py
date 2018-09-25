@@ -35,9 +35,10 @@ else:
 from sumolib import checkBinary  # noqa
 import traci  # noqa
 
+
 def generate_routefile(N):
     random.seed()  # make tests reproducible by random.seed(some_number)
-    
+
     with open("data/cross.rou.xml", "w") as routes:
         print("""<routes>
         <vType id="typeCar" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
@@ -46,42 +47,42 @@ def generate_routefile(N):
         <route id="WE" edges="w2A A2e" />
         <route id="SN" edges="s2A A2n" />
         <route id="EW" edges="e2A A2w" />""", file=routes)
-        
+
         vehNr = 0
-        
+
         # demand in each direction per time step
         p_NS = 1. / 10
         p_SN = 1. / 20
-    	p_WE = 3. / 20
-    	p_EW = 3. / 20
-        
+        p_WE = 3. / 20
+        p_EW = 3. / 20
+
         for i in range(N):
-        	if random.uniform(0, 1) < p_NS:
-        		print('    <vehicle id="car_%i" type="typeCar" route="NS" depart="%i"/>' % (vehNr,i), file=routes)
-        		vehNr += 1
-        		
-        	if random.uniform(0, 1) < p_SN:
-        		print('    <vehicle id="car_%i" type="typeCar" route="SN" depart="%i"/>' % (vehNr,i), file=routes)
-        		vehNr += 1
-        		
-        	if random.uniform(0,1) < p_WE:
-        		print('    <vehicle id="car_%i" type="typeCar" route="WE" depart="%i"/>' % (vehNr,i), file=routes)
-        		vehNr += 1
-        		
-        	if random.uniform(0,1) < p_EW:
-        		print('    <vehicle id="car_%i" type="typeCar" route="EW" depart="%i"/>' % (vehNr,i), file=routes)
-        		vehNr += 1
-        		
+            if random.uniform(0, 1) < p_NS:
+                print('    <vehicle id="car_%i" type="typeCar" route="NS" depart="%i"/>' % (vehNr,i), file=routes)
+                vehNr += 1
+
+            if random.uniform(0, 1) < p_SN:
+                print('    <vehicle id="car_%i" type="typeCar" route="SN" depart="%i"/>' % (vehNr,i), file=routes)
+                vehNr += 1
+
+            if random.uniform(0,1) < p_WE:
+                print('    <vehicle id="car_%i" type="typeCar" route="WE" depart="%i"/>' % (vehNr,i), file=routes)
+                vehNr += 1
+
+            if random.uniform(0,1) < p_EW:
+                print('    <vehicle id="car_%i" type="typeCar" route="EW" depart="%i"/>' % (vehNr,i), file=routes)
+                vehNr += 1
+
         print("</routes>", file=routes)
 
 def run():
     """execute the TraCI control loop"""
     step = 0
-    
+
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         step += 1
-        
+
     traci.close()
     sys.stdout.flush()
 
@@ -99,5 +100,5 @@ def simulate_n_steps(N,gui_opt):
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     traci.start([sumoBinary, "-c", "data/cross.sumocfg","--tripinfo-output", "tripinfo.xml"]) # add ,"--emission-output","emissions.xml" if you want emissions report to be printed
-    
+
     run()
