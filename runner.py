@@ -24,6 +24,9 @@ import os
 import sys
 import optparse
 import random
+import numpy as np
+# from solver.genetic import Chromosome, Genetic
+import solver.genetic as genetic
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -37,7 +40,7 @@ import traci  # noqa
 
 
 def generate_routefile(N):
-    random.seed()  # make tests reproducible by random.seed(some_number)
+    random.seed(42)  # make tests reproducible by random.seed(some_number)
 
     with open("data/cross.rou.xml", "w") as routes:
         print("""<routes>
@@ -75,6 +78,16 @@ def generate_routefile(N):
 
         print("</routes>", file=routes)
 
+
+# def fitness_overwrite(n, e, s, w, sectio_id='A'):
+#     if traci.trafficlight.getPhase(sectio_id) == 0:
+#         return n+s
+#     elif traci.trafficlight.getPhase(sectio_id) == 2:
+#         return w+e
+#     else:
+#         assert 'Section id {} is not 0 or 2'.format(sectio_id)
+
+
 def run():
     """execute the TraCI control loop"""
     step = 0
@@ -82,9 +95,29 @@ def run():
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         step += 1
+        halt_wA0 = traci.lanearea.getLastStepHaltingNumber("wA0")  # number of halting cars on wA0
+        halt_nA0 = traci.lanearea.getLastStepHaltingNumber("nA0")
+        halt_eA0 = traci.lanearea.getLastStepHaltingNumber("eA0")  # number of halting cars on wA0
+        halt_sA0 = traci.lanearea.getLastStepHaltingNumber("sA0")
+        if step % 10  == 0:
+            phase = solve(halt_nA0, halt_eA0, halt_sA0, halt_wA0)
+            traci.trafficlight.setPhase("A", phase)
 
+        # print('phase', traci.trafficlight.getPhase("A"))
+        
     traci.close()
     sys.stdout.flush()
+
+def ga_config():
+    genetic.POPULATION_SIZE = 100
+    genetic.CHROMOSOME_SIZE = 1
+
+def solve(n, e, s, w):
+    ga = genetic.Genetic()
+    ga.initial_population(chromosome_params=[n, e, s, w])
+    best, evo = ga.approximate()
+    print(2*best.chromosome[0])
+    return 2*best.chromosome[0]
 
 # this is the main entry point of this script
 def simulate_n_steps(N,gui_opt):
