@@ -1,1 +1,4 @@
 *.pyc
+.idea
+.vscode
+solver/.ipynb_checkpoints/
