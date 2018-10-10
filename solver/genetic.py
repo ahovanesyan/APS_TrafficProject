@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from pprint import pprint as pp
 from math import floor
 
+#TODO: implement elitism, goes into crossover rate thingy
+
 
 ### GA
 POPULATION_SIZE = 6

@@ -27,6 +27,7 @@ import random
 import numpy as np
 # from solver.genetic import Chromosome, Genetic
 import solver.genetic as genetic
+from matplotlib import pyplot as plt
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -91,6 +92,7 @@ def generate_routefile(N):
 def run():
     """execute the TraCI control loop"""
     step = 0
+    halting_cars = []
 
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
@@ -102,11 +104,18 @@ def run():
         if step % 10  == 0:
             phase = solve(halt_nA0, halt_eA0, halt_sA0, halt_wA0)
             traci.trafficlight.setPhase("A", phase)
+            # traci.trafficlight.setPhaseDuration('A', 10)
+        halting_cars.append(halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0)
+
 
         # print('phase', traci.trafficlight.getPhase("A"))
         
     traci.close()
     sys.stdout.flush()
+    plt.plot(halting_cars)
+    plt.xlabel("time")
+    plt.ylabel("#waiting cars")
+    plt.show()
 
 def ga_config():
     genetic.POPULATION_SIZE = 100
@@ -116,8 +125,8 @@ def solve(n, e, s, w):
     ga = genetic.Genetic()
     ga.initial_population(chromosome_params=[n, e, s, w])
     best, evo = ga.approximate()
-    print(2*best.chromosome[0])
     return 2*best.chromosome[0]
+
 
 # this is the main entry point of this script
 def simulate_n_steps(N,gui_opt):
