@@ -28,6 +28,7 @@ import numpy as np
 # from solver.genetic import Chromosome, Genetic
 import solver.genetic as genetic
 from matplotlib import pyplot as plt
+from belief import Belief
 
 # we need to import python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -93,29 +94,79 @@ def run():
     """execute the TraCI control loop"""
     step = 0
     halting_cars = []
+    time_step = 0
+    waiting_cars = 0
+    belief = Belief()
 
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         step += 1
+        time_step += 1
         halt_wA0 = traci.lanearea.getLastStepHaltingNumber("wA0")  # number of halting cars on wA0
         halt_nA0 = traci.lanearea.getLastStepHaltingNumber("nA0")
         halt_eA0 = traci.lanearea.getLastStepHaltingNumber("eA0")  # number of halting cars on wA0
         halt_sA0 = traci.lanearea.getLastStepHaltingNumber("sA0")
+        # total = halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0
+
+        # print(traci.simulation.getLoadedIDList())
+        # print(traci.simulation.getDepartedIDList())
+        # print(traci._route.RouteDomain.getIDList())
+        # print(traci.route.getEdges("SN"))
+        # print(traci._vehicle.VehicleDomain.getIDList())
+        # print(traci._simulation.SimulationDomain().getIDList())
+        # print(traci.simulation.getIDList())
+        
+        # Find all cars in the network
+        # get their position 
+        # get their path
+        # determine if they are going to be waiting 
+        # if(traci.simulation.getDepartedIDList()): # change to the cars in the network
+        ## MOVE
+        belief.addCars(traci.simulation.getDepartedIDList())
+        belief.removeCars(traci.simulation.getArrivedIDList())
+        # print('departed', traci.simulation.getDepartedIDList())
+        # print('arrived', traci.simulation.getArrivedIDList())
+
+
+
         if step % 10  == 0:
+            ### MOVE 
+            if belief.hasCars():
+                car = belief.cars[0]
+                # position = traci.vehicle.getPosition(car)
+                lane_pos = traci.vehicle.getLanePosition(car)
+                lane = traci.vehicle.getLaneID(car)
+                route = traci.vehicle.getRoute(car)
+                speed = traci.vehicle.getSpeedWithoutTraCI(car)
+                next_tls = traci.vehicle.getNextTLS(car)
+                # print('{}, lane_pos {}, lane {}, route {}'.format(car, lane_pos, lane, route))
+                print('{}, tls {}, speed {}'.format(car, next_tls, speed))
             phase = solve(halt_nA0, halt_eA0, halt_sA0, halt_wA0)
+            ### End MOVE
+
             traci.trafficlight.setPhase("A", phase)
             # traci.trafficlight.setPhaseDuration('A', 10)
-        halting_cars.append(halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0)
+            # halting_cars.append(halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0)
+
+        # if time_step<10:
+        #     waiting_cars += halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0
+        # else:
+        #     waiting_cars += halt_eA0 + halt_wA0 + halt_nA0 + halt_sA0
+        #     halting_cars.append(waiting_cars)
+        #     time_step = 0
+        #     waiting_cars = 0
 
 
+        
         # print('phase', traci.trafficlight.getPhase("A"))
         
     traci.close()
+    
     sys.stdout.flush()
-    plt.plot(halting_cars)
-    plt.xlabel("time")
-    plt.ylabel("#waiting cars")
-    plt.show()
+    # plt.plot(halting_cars)
+    # plt.xlabel("time")
+    # plt.ylabel("#waiting cars")
+    # plt.show()
 
 def ga_config():
     genetic.POPULATION_SIZE = 100
@@ -142,5 +193,5 @@ def simulate_n_steps(N,gui_opt):
     # this is the normal way of using traci. sumo is started as a
     # subprocess and then the python script connects and runs
     traci.start([sumoBinary, "-c", "data/cross.sumocfg","--tripinfo-output", "tripinfo.xml"]) # add ,"--emission-output","emissions.xml" if you want emissions report to be printed
-
+    # traci.
     run()
